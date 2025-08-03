@@ -2,7 +2,7 @@
 
 一个采用electron开发的随机点名软件，支持通过悬浮窗进行便捷的操作。
 
-<img src="https://raw.githubusercontent.com/Yangst233/PIC/main/icon.png" style="zoom:25%;" />
+<div align="center"><img src="https://raw.githubusercontent.com/Yangst233/PIC/main/icon.png" width=100px /></div>
 
 ## 软件界面
 
