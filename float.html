@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+    :root {
+        --primary-color: #409eff;
+        --bg-color: rgba(255, 255, 255, 0.95);
+        --text-color: #333;
+        --border-radius: 12px;
+        --shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+        --button-gradient: linear-gradient(135deg, var(--primary-color), #337ecc);
+        --success-color: #67c23a;
+        --warning-color: #e6a23c;
+        /* 新增遮罩变量 */
+        --edge-mask: linear-gradient(45deg, 
+            transparent 12px, var(--bg-color) 12px,
+            var(--bg-color) calc(100% - 12px), transparent calc(100% - 12px));
+    }
+
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --bg-color: rgba(30, 30, 30, 0.95);
+            --text-color: rgba(255, 255, 255, 0.9);
+            --shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+            --success-color: #85ce61;
+            --warning-color: #ebb563;
+        }
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        /* 修复Safari渲染问题 */
+        -webkit-mask-image: -webkit-radial-gradient(white, black);
+        mask-image: radial-gradient(white, black);;
+        user-select: none !important;
+        cursor: default !important;
+    }
+
+    body {
+        width: 160px;
+        height: 80px;
+        background: transparent!important;
+        overflow: hidden;
+        font-family: '微软雅黑', system-ui;
+        /* 防止子元素溢出 */
+        position: relative;
+    }
+
+    #float-container {
+        width: calc(100% - 2px);
+        height: calc(100% - 2px);
+        position: absolute;
+        top: 1px;
+        left: 1px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 16px;
+        -webkit-app-region: drag;
+        backdrop-filter: blur(10px);
+        /* 使用渐变实现边缘遮罩 */
+        background: var(--edge-mask);
+        border-radius: var(--border-radius);
+        /* 防止模糊溢出 */
+        isolation: isolate;
+    }
+
+    /* 添加阴影层 */
+    #float-container::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        z-index: -1;
+        pointer-events: none;
+    }
+
+    /* 扩展模糊层 */
+    #float-container::before {
+        content: '';
+        position: absolute;
+        top: -10px;
+        left: -10px;
+        right: -10px;
+        bottom: -10px;
+        background: var(--bg-color);
+        border-radius: calc(var(--border-radius) + 10px);
+        z-index: -2;
+        backdrop-filter: blur(20px);
+    }
+
+    .status-indicator {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        display: flex;
+        gap: 6px;
+        z-index: 2; /* 确保显示层级 */
+    }
+
+    .status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #ddd;
+        transition: all 0.3s;
+        /* 防止模糊干扰 */
+        transform: translateZ(0);
+    }
+
+    .status-dot.active {
+        animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.2); }
+        100% { transform: scale(1); }
+    }
+
+    #content-wrapper {
+        flex: 1;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #float-name {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-color);
+        max-width: 100%;
+        text-align: center;
+        user-select: none;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        /* 提升渲染层级 */
+        position: relative;
+        z-index: 1;
+    }
+
+    button {
+        padding: 6px 16px;
+        font-size: 12px;
+        background: var(--button-gradient);
+        border: none;
+        border-radius: 20px;
+        color: white;
+        cursor: pointer;
+        -webkit-app-region: no-drag;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 2px 8px rgba(var(--primary-color), 0.2);
+        transition: transform 0.2s, box-shadow 0.2s;
+        margin-top: 8px;
+        /* 提升按钮层级 */
+        position: relative;
+        z-index: 2;
+        -webkit-user-select: none !important;
+        user-select: none !important;
+    }
+
+    button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(var(--primary-color), 0.3);
+    }
+
+    .button-icon {
+        width: 14px;
+        height: 14px;
+    }
+</style>
+
+</head>
+<body>
+    <div id="float-container">
+        <div class="status-indicator">
+            <div class="status-dot" id="status-led"></div>
+        </div>
+        
+        <div id="content-wrapper">
+            <div id="float-name">准备就绪</div>
+        </div>
+        
+        <button onclick="requestQuickRoll()">
+            <svg class="button-icon" viewBox="0 0 24 24" fill="white">
+                <path d="M13.5 2.5c0-.828.672-1.5 1.5-1.5s1.5.672 1.5 1.5v5.078l3.891-3.184a1.5 1.5 0 012.328 1.25v9.912a1.5 1.5 0 01-2.328 1.25L16.5 13.422v5.078c0 .828-.672 1.5-1.5 1.5s-1.5-.672-1.5-1.5V2.5zM8 4a4 4 0 00-4 4v8a4 4 0 008 0V8a4 4 0 00-4-4z"/>
+            </svg>
+            快速点名
+        </button>
+    </div>
+    <script>
+        const { ipcRenderer } = require('electron');
+        const floatName = document.getElementById('float-name');
+        const statusLed = document.getElementById('status-led');
+
+        ipcRenderer.on('update-name', (_, name) => {
+            if (name === '点名中') {
+                // 激活状态指示
+                statusLed.classList.add('active');
+                statusLed.style.backgroundColor = 'var(--warning-color)';
+            } else {
+                // 显示完成状态
+                statusLed.classList.remove('active');
+                statusLed.style.backgroundColor = 'var(--success-color)';
+                setTimeout(() => {
+                    statusLed.style.backgroundColor = '#ddd';
+                }, 1000);
+            }
+            floatName.textContent = name;
+        });
+
+        function requestQuickRoll() {
+            ipcRenderer.send('quick-roll');
+        }
+
+        // 初始化状态指示灯
+        statusLed.style.backgroundColor = '#ddd';
+        let animationNames = [];
+let animationInterval = null;
+ipcRenderer.on('start-float-animation', (_, { names, speed }) => {
+  animationNames = names;
+  animateNames(speed);
+});
+ipcRenderer.on('stop-float-animation', (_, name) => {
+  stopAnimation(name);
+});
+function animateNames(speed) {
+  if (animationInterval) clearInterval(animationInterval);
+  
+  // 添加加载效果
+  floatName.style.opacity = '0.5';
+  floatName.style.transform = 'scale(0.9)';
+  
+  // 启动随机动画
+  animationInterval = setInterval(() => {
+    const index = Math.floor(Math.random() * animationNames.length);
+    floatName.textContent = animationNames[index];
+    
+    // 添加动画效果
+    floatName.style.opacity = '1';
+    floatName.style.transform = 'scale(1.05)';
+    setTimeout(() => {
+      floatName.style.transform = 'scale(1)';
+    }, 100);
+  }, speed);
+  // 状态指示
+  statusLed.style.backgroundColor = 'var(--warning-color)';
+  statusLed.style.animation = 'pulse 1s infinite';
+}
+function stopAnimation(finalName) {
+  if (animationInterval) clearInterval(animationInterval);
+  
+  // 最终效果
+  floatName.textContent = finalName;
+  floatName.style.color = 'var(--primary-color)';
+  floatName.style.transform = 'scale(1.2)';
+  setTimeout(() => {
+    floatName.style.transform = 'scale(1)';
+    floatName.style.color = 'var(--text-color)';
+  }, 500);
+  // 状态指示
+  statusLed.style.animation = '';
+  statusLed.style.backgroundColor = 'var(--success-color)';
+  setTimeout(() => {
+    statusLed.style.backgroundColor = '#ddd';
+  }, 1000);
+}
+    </script>
+</body>
+</html>
